@@ -1,0 +1,125 @@
+January 15, 2019
+Free your Synology ports for Docker
+I’ve been running Pi-Hole on my Synology for a good few years. It has taken me a while to figure out how to run it the way I liked to which is why I wrote the previous guide a few years ago. (see: Running Pi-Hole inside Docker on Synology)
+
+Although this has helped me and many others, I was never quite happy about the outcome and have strived to find a better way. I didn’t want to have to rely on WebStation or anything else outside of the docker container. Thankfully I stumbled upon dockers network driver named macvlan.
+
+Note: I will be using the command line in this guide however the containers will still be visible in the Synology Docker UI.
+
+TL;DR (too long, don’t read)
+Download the docker-compose.yaml1 file to your Synology, edit all the network addresses replacing the example network 192.168.123.X with your own network. and run the following command:
+
+$sudo docker-compose up -d
+
+If it all works Pi-Hole will be running on IP .199. Continue reading to understand (hopefully!)
+
+Using macvlan for networking
+Macvlan is a network driver provided by Docker, the following is an extract from the documentation
+
+Some applications, especially legacy applications or applications which monitor network traffic, expect to be directly connected to the physical network. In this type of situation, you can use the macvlan network driver to assign a MAC address to each container’s virtual network interface, making it appear to be a physical network interface directly connected to the physical network.
+
+So the idea is that we will create our own docker network using the macvlan driver, this will then allow us to connect our Pi-Hole container onto this network which will assign it it’s own MAC. This will then appear to be directly connected on our host network but will have it’s own IP and therefore all network ports available.
+
+A new network can be easily created using the following command (but hold off, we’ll go into actually doing this later using configuration files)
+
+In all my examples I will be using the network 192.168.123.0/24. If you use any of the downloaded files please update these entries to your specific network.
+
+$sudo docker network create 
+    —driver=macvlan 
+    —gateway=192.168.123.1
+    —subnet=192.168.123.0/24 
+    —ip-range=192.168.1.192/28 
+    -o parent=eth0
+    name-of-network
+Note: The IP address range in the above command of 192.168.123.192 / 28 might appear strange. This is so that we can restrict the IP addresses docker uses so not to clash with our physical machines see IP calculator.
+
+Making things easier using docker compose
+I’m quite a lazy guy when if comes to repitition. I quickly became fed up of clicking around the docker UI to create containers, update containers and to modify them. Luckily docker comes with a way to automate this setup with the command docker-compose. I now use this to create all my containers that I run but in this example we will focus on Pi-Hole.
+
+Note: I’m using version 2 of the docker compose format. This is the only version that seems to support specifying MAC and IP addresses which to me is very handy. It only needs to be specified once at the top of each file.
+
+Docker compose requires a configuration file that is in YAML format. This is just plain text so can be edited using any application however, whitespace is important so no TAB characters please.
+
+In the docker compose file we can create the network (macvlan), we can create our service (Pi-Hole) and optionally assign specific MAC and IP addresses. I will explain each section individually to build up the complete picture. I will also attach a download link at the bottom of the article so that you are not forced to copy & paste.
+
+If you want to follow along then ssh to your Synology, create a file name docker-compose.yaml and add the following snippets. You can then try this out running the following command in the same place as the file you created. This command will re-create the config each time so you do not need to delete previous versions.
+
+$sudo docker-compose up
+For more information try sudo docker-compose up —help
+
+Start by specifying the version.
+
+version: “2”                              # Version 2, only needed at top of each file
+Defining the network:
+
+networks:
+  pihole_network:                         # Name of network
+    driver: macvlan                       # Use the macvlan network driver
+    driver_opts:
+      parent: ovs_eth0                    # If open vSwitch is disabled use eth0 (or eth1 +)
+    ipam:
+      config:
+        - subnet: 192.168.123.0/24        # Specify subnet
+          gateway: 192.168.123.1          # Gateway address
+          ip-range: 192.168.123.192/28    # Available IP addresses
+This creates a new network named pihole_network using the parent network interface ovs_en0. This will be visible in the Synology docker UI under networks.
+
+Next we need to add our Pi-Hole container. This can be added with the following configuration.
+
+services:
+  pihole:
+    container_name: pihole          # We name our container here
+    image: pihole/pihole:latest     # Version 4.1 works with the required cap_add section
+    hostname: pihole                # Containers hostname (optional)
+    domainname: example.com         # Contaners domain (optional)
+    mac_address: d0:ca:ab:cd:ef:01  # Random MAC address (optional)
+    cap_add:
+      - NET_ADMIN                   # This is required for version 4.1 onwards
+    networks:
+      - pihole_network              # Same name of network defined above
+    dns:
+      - 127.0.0.1
+      - 8.8.8.8
+    ports:
+      - 443/tcp
+      - 53/tcp
+      - 53/udp
+      - 67/udp
+      - 80/tcp
+    environment:                    # Optional environment configuration
+      ServerIP: 192.168.123.199
+      WEBPASSWORD: “”
+      VIRTUAL_HOST: pihole.example.com
+    restart: unless-stopped         # Set container to always restart
+We specify our containers name, image and various networking information plus the environments required by Pi-Hole.
+
+The combination of these two configurations are all that is required to create and run Pi-Hole on your Synology NAS. The complete file can be downloaded here.1
+
+If you need more information the documentation can be found here.
+
+How do we use docker compose
+Assuming you have your docker compose file correctly setup (either writing your own or downloading one of mine) you can now start up Pi-Hole from the command line. If all works out then Pi-Hole should now be up and running and visible inside the Synology Docker UI.
+
+$sudo docker-compose up -d
+Docker compose requires root access which will ask for your admin password. The -d is needed to run in daemon mode, if we do not supply this then the command will block in the shell.
+
+How do we go about updating - you might ask?
+Updating to the latest image is very easy. You can run the following commands.
+
+$sudo docker-compose pull
+$sudo docker-compose up -d
+Optionally you can specify the service $sudo docker-compose up pihole if you have mulitple services
+
+This will download the new version and then re-create the updated Pi-Hole container.
+
+Optional step; one file per container
+As I have many containers running on my Synology I separated each service into it’s own file and included it along with it’s configuration and volumes. This way I can compose many docker files together rather than having one huge file. This is accomplished by the following in my main docker-compose.yaml file in the full example:
+
+services:
+  pihole:
+    extends:
+      service: pihole
+      file: pihole/docker-compose.yaml
+Downloading the combined2 file will give you the mulitple docker files, or you can download the single1 file for a basic simple container.
+
+Head over to my project on gitlab to see all files in full 3
