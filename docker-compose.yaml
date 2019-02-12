@@ -37,9 +37,4 @@ networks:
       config:
         - subnet: 192.168.1.0/24            # <-- Update
           gateway: 192.168.1.1              # <-- Update
-          ip_range: 192.168.123.250/28        # <-- Update
-
-pihole_networ
-TIẾNG VIỆT
-pihole_networ
-TÙY CHỌN TIỆN ÍCH MỞ RỘNGThêm nữa »
+          ip_range: 192.168.1.250/28        # <-- Update
