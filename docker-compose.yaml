@@ -25,7 +25,8 @@ services:
       - 80/tcp
     environment:
       ServerIP: 192.168.1.12         # <-- Update (match ipv4_address)
-      VIRTUAL_HOST: pihole.fbv.com.vn # <-- Add password (if required)
+      VIRTUAL_HOST: pihole.fbv.com.vn  # <-- Update (match hostname + domainname)
+      WEBPASSWORD: "piholeFbv@2019"                   # <-- Add password (if required)
     restart: unless-stopped
 
 networks:
@@ -37,4 +38,4 @@ networks:
       config:
         - subnet: 192.168.1.0/24            # <-- Update
           gateway: 192.168.1.1              # <-- Update
-          ip_range: 192.168.1.10/29        # <-- Update
+          ip_range: 192.168.1.1/29          # <-- Update
