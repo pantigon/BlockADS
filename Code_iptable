@@ -1,0 +1,29 @@
+sudo su
+nano /etc/allow-vn.sh
+
+# Create the ipset list
+ipset -N -q vietnam hash:net
+
+# Pull the latest IP set for Vietnam
+wget -q http://www.ipdeny.com/ipblocks/data/aggregated/vn-aggregated.zone -O /etc/vn-aggregated.zone
+
+# Add each IP address from the downloaded list into the ipset 'vietnam'
+for i in $(cat /etc/vn-aggregated.zone ); do ipset -A -q vietnam $i; done
+
+chmod +x /etc/allow-vn.sh
+
+apt install ipset
+
+/etc/allow-vn.sh
+
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -m set --match-set vietnam src -j ACCEPT
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -j DROP
+iptables -A OUTPUT -j ACCEPT
+
+iptables-save > /etc/iptables.rules
+
+apt-get install iptables-persistent
+
+netfilter-persistent save
