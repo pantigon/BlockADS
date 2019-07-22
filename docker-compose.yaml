@@ -7,7 +7,7 @@ services:
     container_name: pihole
     image: pihole/pihole:latest
     hostname: pihole
-    domainname: example.com             # <-- Update
+    domainname: fbv.com.vn             # <-- Update
     mac_address: d0:ca:ab:cd:ef:01
     cap_add:
       - NET_ADMIN
@@ -25,8 +25,8 @@ services:
       - 80/tcp
     environment:
       ServerIP: 192.168.1.12                  # <-- Update (match ipv4_address)
-      VIRTUAL_HOST: pihole.example.com        # <-- Update (match hostname + domainname)
-      WEBPASSWORD: "123456"                   # <-- Add password (if required)
+      VIRTUAL_HOST: pihole.fbv.com.vn        # <-- Update (match hostname + domainname)
+      WEBPASSWORD: "piholeFbv@2019"                   # <-- Add password (if required)
     restart: unless-stopped
 
 networks:
@@ -38,4 +38,4 @@ networks:
       config:
         - subnet: 192.168.1.0/24            # <-- Update
           gateway: 192.168.1.1              # <-- Update
-          ip_range: 192.168.1.1/29          # <-- Update
+          ip_range: 192.168.1.12/30          # <-- Update
