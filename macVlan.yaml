@@ -1,5 +1,5 @@
 networks:
-  adguard_network:
+  pihole_network:
     driver: macvlan
     driver_opts:
       parent: eth0
