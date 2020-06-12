@@ -12,7 +12,7 @@ services:
     cap_add:
       - NET_ADMIN
     networks:
-      pihole_network:
+      adguard_network:
         ipv4_address: 192.168.1.12   # <-- Update
     dns:
       - 127.0.0.1
