@@ -1,7 +1,4 @@
 version: “2”                              # Version 2, only needed at top of each file
-
-Defining the network:
-
 networks:
   pihole_network:                         # Name of network
     driver: macvlan                       # Use the macvlan network driver
