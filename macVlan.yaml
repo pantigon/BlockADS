@@ -1,10 +1,14 @@
+version: “2”                              # Version 2, only needed at top of each file
+
+Defining the network:
+
 networks:
-  pihole_network:
-    driver: macvlan
+  pihole_network:                         # Name of network
+    driver: macvlan                       # Use the macvlan network driver
     driver_opts:
-      parent: eth0
+      parent: eth0                    # If open vSwitch is disabled use eth0 (or eth1 +)
     ipam:
       config:
-        - subnet: 192.168.1.0/24            # <-- Update
-          gateway: 192.168.1.1              # <-- Update
-          ip_range: 192.168.1.12/30          # <-- Update
+        - subnet: 192.168.1.0/24        # Specify subnet
+          gateway: 192.168.1.1          # Gateway address
+          ip-range: 192.168.123.12/28    # Available IP addresses
