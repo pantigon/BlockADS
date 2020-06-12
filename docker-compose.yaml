@@ -3,7 +3,7 @@
 version: '2'
 
 services:
-  pihole:
+  adguard:
     container_name: adguard
     image: adguard/adguardhome:latest
     hostname: adguard
