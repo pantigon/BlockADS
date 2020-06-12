@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
 
 networks:
-  pihole_network:
+  adguard_network:
     driver: macvlan
     driver_opts:
       parent: eth0
